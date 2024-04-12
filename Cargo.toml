@@ -12,7 +12,7 @@ documentation = "https://docs.rs/st7789"
 rust-version = "1.51"
 
 [dependencies]
-display-interface = "0.4"
+display-interface = "0.5.0"
 embedded-hal = "1.0.0"
 nb = "1.0"
 
@@ -22,7 +22,7 @@ version = "0.4.0"
 
 [dependencies.heapless]
 optional = true
-version = "0.7"
+version = "0.8.0"
 
 [features]
 default = ["graphics", "batch"]
