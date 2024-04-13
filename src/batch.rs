@@ -3,28 +3,28 @@
 //! This enables the pixels to be rendered efficiently as Pixel Blocks, which may be transmitted in a single Non-Blocking SPI request.
 use crate::{Error, ST7789};
 use display_interface::WriteOnlyDataCommand;
-use embedded_graphics_core::{
-    pixelcolor::{raw::RawU16, Rgb565},
-    prelude::*,
-};
+use embedded_graphics_core::{pixelcolor::raw::RawU16, prelude::*};
 use embedded_hal::digital::OutputPin;
 
-pub trait DrawBatch<DI, RST, BL, T, PinE>
+pub trait DrawBatch<DI, RST, BL, T, C, PinE>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
     BL: OutputPin<Error = PinE>,
-    T: IntoIterator<Item = Pixel<Rgb565>>,
+    T: IntoIterator<Item = Pixel<C>>,
+    C: PixelColor + Into<RawU16>,
 {
     fn draw_batch(&mut self, item_pixels: T) -> Result<(), Error<PinE>>;
 }
 
-impl<DI, RST, BL, T, PinE> DrawBatch<DI, RST, BL, T, PinE> for ST7789<DI, RST, BL>
+impl<DI, RST, BL, T, C, PinE> DrawBatch<DI, RST, BL, T, C, PinE> for ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
     BL: OutputPin<Error = PinE>,
-    T: IntoIterator<Item = Pixel<Rgb565>>,
+    T: IntoIterator<Item = Pixel<C>>,
+    C: PixelColor,
+    RawU16: From<C>,
 {
     fn draw_batch(&mut self, item_pixels: T) -> Result<(), Error<PinE>> {
         //  Get the pixels for the item to be rendered.
@@ -68,7 +68,7 @@ type BlockColors = heapless::Vec<u16, MAX_BLOCK_SIZE>;
 
 /// Iterator for each Pixel Row in the pixel data. A Pixel Row consists of contiguous pixels on the same row.
 #[derive(Debug, Clone)]
-pub struct RowIterator<P: Iterator<Item = Pixel<Rgb565>>> {
+pub struct RowIterator<P: Iterator<Item = Pixel<C>>, C: PixelColor> {
     /// Pixels to be batched into rows
     pixels: P,
     /// Start column number
@@ -130,11 +130,12 @@ pub struct PixelBlock {
 
 /// Batch the pixels into Pixel Rows, which are contiguous pixels on the same row.
 /// P can be any Pixel Iterator (e.g. a rectangle).
-fn to_rows<P>(pixels: P) -> RowIterator<P>
+fn to_rows<P, C>(pixels: P) -> RowIterator<P, C>
 where
-    P: Iterator<Item = Pixel<Rgb565>>,
+    P: Iterator<Item = Pixel<C>>,
+    C: PixelColor,
 {
-    RowIterator::<P> {
+    RowIterator::<P, C> {
         pixels,
         x_left: 0,
         x_right: 0,
@@ -163,7 +164,10 @@ where
 
 /// Implement the Iterator for Pixel Rows.
 /// P can be any Pixel Iterator (e.g. a rectangle).
-impl<P: Iterator<Item = Pixel<Rgb565>>> Iterator for RowIterator<P> {
+impl<P: Iterator<Item = Pixel<C>>, C: PixelColor> Iterator for RowIterator<P, C>
+where
+    RawU16: From<C>,
+{
     /// This Iterator returns Pixel Rows
     type Item = PixelRow;
 

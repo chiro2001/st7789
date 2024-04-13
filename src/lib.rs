@@ -8,6 +8,7 @@ pub mod instruction;
 
 use crate::instruction::Instruction;
 use core::iter::once;
+use core::marker::PhantomData;
 
 use display_interface::DataFormat::{U16BEIter, U8Iter};
 use display_interface::WriteOnlyDataCommand;
@@ -23,7 +24,7 @@ mod batch;
 ///
 /// ST7789 driver to connect to TFT displays.
 ///
-pub struct ST7789<DI, RST, BL>
+pub struct ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin,
@@ -40,6 +41,7 @@ where
     size_y: u16,
     // Current orientation
     orientation: Orientation,
+    phantom: PhantomData<C>,
 }
 
 ///
@@ -88,7 +90,7 @@ pub enum Error<PinE> {
     Pin(PinE),
 }
 
-impl<DI, RST, BL, PinE> ST7789<DI, RST, BL>
+impl<DI, RST, BL, C, PinE> ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
@@ -113,6 +115,7 @@ where
             size_x,
             size_y,
             orientation: Orientation::default(),
+            phantom: PhantomData,
         }
     }
 

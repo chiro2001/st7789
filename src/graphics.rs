@@ -1,4 +1,4 @@
-use embedded_graphics_core::pixelcolor::Rgb565;
+use embedded_graphics_core::pixelcolor::{Bgr565, PixelColor, RgbColor};
 use embedded_graphics_core::prelude::{DrawTarget, IntoStorage, Point, Size};
 use embedded_graphics_core::{
     pixelcolor::raw::{RawData, RawU16},
@@ -11,7 +11,7 @@ use embedded_hal::digital::OutputPin;
 use crate::{Error, Orientation, ST7789};
 use display_interface::WriteOnlyDataCommand;
 
-impl<DI, RST, BL, PinE> ST7789<DI, RST, BL>
+impl<DI, RST, BL, C, PinE> ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
@@ -28,14 +28,16 @@ where
     }
 }
 
-impl<DI, RST, BL, PinE> DrawTarget for ST7789<DI, RST, BL>
+impl<DI, RST, BL, C, PinE> DrawTarget for ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
     BL: OutputPin<Error = PinE>,
+    C: PixelColor + IntoStorage<Storage = u16>,
+    RawU16: From<C>,
 {
     type Error = Error<PinE>;
-    type Color = Rgb565;
+    type Color = C;
 
     #[cfg(not(feature = "batch"))]
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
@@ -56,7 +58,7 @@ where
     #[cfg(feature = "batch")]
     fn draw_iter<T>(&mut self, item: T) -> Result<(), Self::Error>
     where
-        T: IntoIterator<Item = Pixel<Rgb565>>,
+        T: IntoIterator<Item = Pixel<C>>,
     {
         use crate::batch::DrawBatch;
 
@@ -113,7 +115,7 @@ where
         }
     }
 
-    fn clear(&mut self, color: Rgb565) -> Result<(), Self::Error>
+    fn clear(&mut self, color: C) -> Result<(), Self::Error>
     where
         Self: Sized,
     {
@@ -133,7 +135,7 @@ where
     }
 }
 
-impl<DI, RST, BL, PinE> OriginDimensions for ST7789<DI, RST, BL>
+impl<DI, RST, BL, C, PinE> OriginDimensions for ST7789<DI, RST, BL, C>
 where
     DI: WriteOnlyDataCommand,
     RST: OutputPin<Error = PinE>,
