@@ -1,4 +1,4 @@
-use embedded_graphics_core::pixelcolor::{Bgr565, PixelColor, RgbColor};
+use embedded_graphics_core::pixelcolor::PixelColor;
 use embedded_graphics_core::prelude::{DrawTarget, IntoStorage, Point, Size};
 use embedded_graphics_core::{
     pixelcolor::raw::{RawData, RawU16},
